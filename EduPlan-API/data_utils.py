@@ -1,4 +1,4 @@
-from carrera_api.models import *
+from EduPlan_API.models import *
 import json
 import requests
 import datetime
