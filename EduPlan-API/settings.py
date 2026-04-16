@@ -75,7 +75,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'EduPlan_API.wsgi.application'
 
-DB_ENGINE = os.getenv('EDUPLAN_DB_ENGINE', 'sqlite').lower()
+DB_ENGINE = os.getenv('EDUPLAN_DB_ENGINE', 'mysql').lower()
 
 if DB_ENGINE == 'mysql':
     DATABASES = {
