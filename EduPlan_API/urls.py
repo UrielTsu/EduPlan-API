@@ -4,6 +4,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from .views.auth import CustomAuthToken, Logout
 from .views.bootstrap import VersionView
+from .views.classrooms import AulaDetailView, AulasView
 from .views.groups import GrupoDetailView, GruposView
 from .views.periods import PeriodoDetailView, PeriodosView
 from .views.subjects import MateriaDetailView, MateriasView
@@ -30,6 +31,8 @@ urlpatterns = [
     path("api/materias/<int:pk>/", MateriaDetailView.as_view(), name="api-materia-detail"),
     path("api/grupos/", GruposView.as_view(), name="api-grupos"),
     path("api/grupos/<int:pk>/", GrupoDetailView.as_view(), name="api-grupo-detail"),
+    path("api/aulas/", AulasView.as_view(), name="api-aulas"),
+    path("api/aulas/<int:pk>/", AulaDetailView.as_view(), name="api-aula-detail"),
     path("api/docentes/", DocentesView.as_view(), name="api-docentes"),
     path("api/docentes/<int:pk>/", DocenteDetailView.as_view(), name="api-docente-detail"),
     path("api/estudiantes/", EstudiantesView.as_view(), name="api-estudiantes"),

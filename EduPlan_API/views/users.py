@@ -34,6 +34,13 @@ def _create_role_user(validated_data, tipo_usuario):
     is_active = validated_data.get("is_active", True)
     numero_empleado = validated_data.get("numero_empleado", "").strip()
     matricula = validated_data.get("matricula", "").strip()
+    telefono = validated_data.get("telefono", "").strip()
+    programa = validated_data.get("programa", "").strip()
+    semestre = validated_data.get("semestre", "").strip()
+    fecha_inscripcion = validated_data.get("fecha_inscripcion")
+    direccion = validated_data.get("direccion", "").strip()
+    contacto_emergencia_nombre = validated_data.get("contacto_emergencia_nombre", "").strip()
+    contacto_emergencia_telefono = validated_data.get("contacto_emergencia_telefono", "").strip()
 
     if User.objects.filter(email=email).exists():
         return None, Response({"message": f"El correo {email} ya existe."}, status=status.HTTP_400_BAD_REQUEST)
@@ -79,7 +86,17 @@ def _create_role_user(validated_data, tipo_usuario):
     if tipo_usuario == User.TipoUsuario.DOCENTE:
         return Docente.objects.create(usuario=user, numero_empleado=numero_empleado), None
 
-    return Estudiante.objects.create(usuario=user, matricula=matricula), None
+    return Estudiante.objects.create(
+        usuario=user,
+        matricula=matricula,
+        telefono=telefono,
+        programa=programa,
+        semestre=semestre,
+        fecha_inscripcion=fecha_inscripcion,
+        direccion=direccion,
+        contacto_emergencia_nombre=contacto_emergencia_nombre,
+        contacto_emergencia_telefono=contacto_emergencia_telefono,
+    ), None
 
 
 def _update_role_user(user, relation, validated_data, tipo_usuario):
@@ -119,6 +136,22 @@ def _update_role_user(user, relation, validated_data, tipo_usuario):
         if Estudiante.objects.exclude(pk=relation.pk).filter(matricula=matricula).exists():
             return Response({"message": f"La matricula {matricula} ya existe."}, status=status.HTTP_400_BAD_REQUEST)
         relation.matricula = matricula
+
+    if tipo_usuario == User.TipoUsuario.ESTUDIANTE:
+        if "telefono" in validated_data:
+            relation.telefono = validated_data["telefono"].strip()
+        if "programa" in validated_data:
+            relation.programa = validated_data["programa"].strip()
+        if "semestre" in validated_data:
+            relation.semestre = validated_data["semestre"].strip()
+        if "fecha_inscripcion" in validated_data:
+            relation.fecha_inscripcion = validated_data["fecha_inscripcion"]
+        if "direccion" in validated_data:
+            relation.direccion = validated_data["direccion"].strip()
+        if "contacto_emergencia_nombre" in validated_data:
+            relation.contacto_emergencia_nombre = validated_data["contacto_emergencia_nombre"].strip()
+        if "contacto_emergencia_telefono" in validated_data:
+            relation.contacto_emergencia_telefono = validated_data["contacto_emergencia_telefono"].strip()
         relation.save()
 
     return None

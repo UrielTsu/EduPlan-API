@@ -106,6 +106,13 @@ class Estudiante(models.Model):
         primary_key=True,
     )
     matricula = models.CharField(max_length=50, unique=True)
+    telefono = models.CharField(max_length=30, blank=True)
+    programa = models.CharField(max_length=150, blank=True)
+    semestre = models.CharField(max_length=50, blank=True)
+    fecha_inscripcion = models.DateField(null=True, blank=True)
+    direccion = models.CharField(max_length=255, blank=True)
+    contacto_emergencia_nombre = models.CharField(max_length=150, blank=True)
+    contacto_emergencia_telefono = models.CharField(max_length=30, blank=True)
     creation = models.DateTimeField(auto_now_add=True)
     update = models.DateTimeField(auto_now=True)
 
@@ -162,6 +169,27 @@ class Grupo(models.Model):
 
     def __str__(self):
         return self.codigo
+
+
+class Aula(models.Model):
+    class Estado(models.TextChoices):
+        DISPONIBLE = "Disponible", "Disponible"
+        EN_USO = "En uso", "En uso"
+
+    edificio = models.CharField(max_length=100)
+    numero = models.CharField(max_length=50)
+    capacidad = models.PositiveIntegerField()
+    recursos = models.JSONField(default=list, blank=True)
+    estado = models.CharField(max_length=20, choices=Estado.choices, default=Estado.DISPONIBLE)
+    creation = models.DateTimeField(auto_now_add=True)
+    update = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["edificio", "numero", "id"]
+        unique_together = ("edificio", "numero")
+
+    def __str__(self):
+        return f"{self.edificio} - {self.numero}"
 
 class BearerTokenAuthentication(TokenAuthentication):
     keyword = "Bearer"

@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from .models import Administrador, Docente, Estudiante, Grupo, Materia, Periodo
+from .models import Administrador, Aula, Docente, Estudiante, Grupo, Materia, Periodo
 
 User = get_user_model()
 
@@ -18,6 +18,13 @@ class UserCreateSerializer(serializers.Serializer):
     tipo_usuario = serializers.ChoiceField(choices=User.TipoUsuario.choices)
     numero_empleado = serializers.CharField(max_length=50, required=False, allow_blank=True)
     matricula = serializers.CharField(max_length=50, required=False, allow_blank=True)
+    telefono = serializers.CharField(max_length=30, required=False, allow_blank=True)
+    programa = serializers.CharField(max_length=150, required=False, allow_blank=True)
+    semestre = serializers.CharField(max_length=50, required=False, allow_blank=True)
+    fecha_inscripcion = serializers.DateField(required=False, allow_null=True)
+    direccion = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    contacto_emergencia_nombre = serializers.CharField(max_length=150, required=False, allow_blank=True)
+    contacto_emergencia_telefono = serializers.CharField(max_length=30, required=False, allow_blank=True)
 
     def validate(self, attrs):
         email = attrs["email"].strip().lower()
@@ -33,6 +40,13 @@ class UserUpdateSerializer(serializers.Serializer):
     is_active = serializers.BooleanField(required=False)
     numero_empleado = serializers.CharField(max_length=50, required=False, allow_blank=True)
     matricula = serializers.CharField(max_length=50, required=False, allow_blank=True)
+    telefono = serializers.CharField(max_length=30, required=False, allow_blank=True)
+    programa = serializers.CharField(max_length=150, required=False, allow_blank=True)
+    semestre = serializers.CharField(max_length=50, required=False, allow_blank=True)
+    fecha_inscripcion = serializers.DateField(required=False, allow_null=True)
+    direccion = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    contacto_emergencia_nombre = serializers.CharField(max_length=150, required=False, allow_blank=True)
+    contacto_emergencia_telefono = serializers.CharField(max_length=30, required=False, allow_blank=True)
 
     def validate(self, attrs):
         email = attrs.get("email")
@@ -134,6 +148,24 @@ class GrupoSerializer(serializers.ModelSerializer):
 
         if cupo_max is not None and inscritos is not None and inscritos > cupo_max:
             raise serializers.ValidationError({"inscritos": "Los inscritos no pueden exceder el cupo maximo."})
+
+        return attrs
+
+
+class AulaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Aula
+        fields = ("id", "edificio", "numero", "capacidad", "recursos", "estado")
+
+    def validate(self, attrs):
+        capacidad = attrs.get("capacidad")
+        recursos = attrs.get("recursos")
+
+        if capacidad is not None and capacidad <= 0:
+            raise serializers.ValidationError({"capacidad": "La capacidad debe ser mayor a 0."})
+
+        if recursos is not None and not isinstance(recursos, list):
+            raise serializers.ValidationError({"recursos": "Los recursos deben enviarse como una lista."})
 
         return attrs
 
