@@ -112,6 +112,57 @@ class Estudiante(models.Model):
     def __str__(self):
         return f"Estudiante: {self.usuario.email}"
 
+
+class Periodo(models.Model):
+    class Estado(models.TextChoices):
+        ACTIVO = "Activo", "Activo"
+        FINALIZADO = "Finalizado", "Finalizado"
+
+    nombre = models.CharField(max_length=120, unique=True)
+    fecha_inicio = models.DateField()
+    fecha_fin = models.DateField()
+    estado = models.CharField(max_length=20, choices=Estado.choices, default=Estado.ACTIVO)
+    creation = models.DateTimeField(auto_now_add=True)
+    update = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-fecha_inicio", "-id"]
+
+    def __str__(self):
+        return self.nombre
+
+
+class Materia(models.Model):
+    nombre = models.CharField(max_length=150)
+    codigo = models.CharField(max_length=20, unique=True)
+    creditos = models.PositiveIntegerField()
+    area_academica = models.CharField(max_length=120)
+    creation = models.DateTimeField(auto_now_add=True)
+    update = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["nombre", "id"]
+
+    def __str__(self):
+        return f"{self.codigo} - {self.nombre}"
+
+
+class Grupo(models.Model):
+    codigo = models.CharField(max_length=20, unique=True)
+    materia = models.CharField(max_length=150)
+    docente = models.CharField(max_length=150, blank=True)
+    semestre = models.CharField(max_length=50)
+    cupo_max = models.PositiveIntegerField()
+    inscritos = models.PositiveIntegerField(default=0)
+    creation = models.DateTimeField(auto_now_add=True)
+    update = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["codigo", "id"]
+
+    def __str__(self):
+        return self.codigo
+
 class BearerTokenAuthentication(TokenAuthentication):
     keyword = "Bearer"
 
