@@ -57,3 +57,6 @@ sistema_fcc_api/migrations
 # Upload data
 /uploadData
 .DS_Store
+
+# Database config
+db.sqlite3
