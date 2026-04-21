@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import Administrador, Docente, Estudiante, Usuario
+from .models import Administrador, Docente, Estudiante, Inscripcion, Usuario
 
 
 @admin.register(Usuario)
@@ -41,4 +41,10 @@ class DocenteAdmin(admin.ModelAdmin):
 class EstudianteAdmin(admin.ModelAdmin):
     list_display = ("usuario", "matricula", "creation", "update")
     search_fields = ("usuario__email", "usuario__first_name", "usuario__last_name", "matricula")
+
+
+@admin.register(Inscripcion)
+class InscripcionAdmin(admin.ModelAdmin):
+    list_display = ("estudiante", "grupo", "fecha_inscripcion", "creation")
+    search_fields = ("estudiante__usuario__email", "estudiante__matricula", "grupo__codigo", "grupo__materia")
 

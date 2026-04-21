@@ -33,7 +33,21 @@ def _create_role_user(validated_data, tipo_usuario):
     password = validated_data["password"]
     is_active = validated_data.get("is_active", True)
     numero_empleado = validated_data.get("numero_empleado", "").strip()
+    telefono = validated_data.get("telefono", "").strip()
+    departamento = validated_data.get("departamento", "").strip()
+    especializacion = validated_data.get("especializacion", "").strip()
+    tipo_contrato = validated_data.get("tipo_contrato", "").strip()
+    fecha_contratacion = validated_data.get("fecha_contratacion")
+    horario_atencion = validated_data.get("horario_atencion", "").strip()
+    cubiculo = validated_data.get("cubiculo", "").strip()
     matricula = validated_data.get("matricula", "").strip()
+    telefono = validated_data.get("telefono", "").strip()
+    programa = validated_data.get("programa", "").strip()
+    semestre = validated_data.get("semestre", "").strip()
+    fecha_inscripcion = validated_data.get("fecha_inscripcion")
+    direccion = validated_data.get("direccion", "").strip()
+    contacto_emergencia_nombre = validated_data.get("contacto_emergencia_nombre", "").strip()
+    contacto_emergencia_telefono = validated_data.get("contacto_emergencia_telefono", "").strip()
 
     if User.objects.filter(email=email).exists():
         return None, Response({"message": f"El correo {email} ya existe."}, status=status.HTTP_400_BAD_REQUEST)
@@ -77,9 +91,29 @@ def _create_role_user(validated_data, tipo_usuario):
         return Administrador.objects.get(usuario=user), None
 
     if tipo_usuario == User.TipoUsuario.DOCENTE:
-        return Docente.objects.create(usuario=user, numero_empleado=numero_empleado), None
+        return Docente.objects.create(
+            usuario=user,
+            numero_empleado=numero_empleado,
+            telefono=telefono,
+            departamento=departamento,
+            especializacion=especializacion,
+            tipo_contrato=tipo_contrato,
+            fecha_contratacion=fecha_contratacion,
+            horario_atencion=horario_atencion,
+            cubiculo=cubiculo,
+        ), None
 
-    return Estudiante.objects.create(usuario=user, matricula=matricula), None
+    return Estudiante.objects.create(
+        usuario=user,
+        matricula=matricula,
+        telefono=telefono,
+        programa=programa,
+        semestre=semestre,
+        fecha_inscripcion=fecha_inscripcion,
+        direccion=direccion,
+        contacto_emergencia_nombre=contacto_emergencia_nombre,
+        contacto_emergencia_telefono=contacto_emergencia_telefono,
+    ), None
 
 
 def _update_role_user(user, relation, validated_data, tipo_usuario):
@@ -112,6 +146,22 @@ def _update_role_user(user, relation, validated_data, tipo_usuario):
         if Docente.objects.exclude(pk=relation.pk).filter(numero_empleado=numero_empleado).exists():
             return Response({"message": f"El numero de empleado {numero_empleado} ya existe."}, status=status.HTTP_400_BAD_REQUEST)
         relation.numero_empleado = numero_empleado
+
+    if tipo_usuario == User.TipoUsuario.DOCENTE:
+        if "telefono" in validated_data:
+            relation.telefono = validated_data["telefono"].strip()
+        if "departamento" in validated_data:
+            relation.departamento = validated_data["departamento"].strip()
+        if "especializacion" in validated_data:
+            relation.especializacion = validated_data["especializacion"].strip()
+        if "tipo_contrato" in validated_data:
+            relation.tipo_contrato = validated_data["tipo_contrato"].strip()
+        if "fecha_contratacion" in validated_data:
+            relation.fecha_contratacion = validated_data["fecha_contratacion"]
+        if "horario_atencion" in validated_data:
+            relation.horario_atencion = validated_data["horario_atencion"].strip()
+        if "cubiculo" in validated_data:
+            relation.cubiculo = validated_data["cubiculo"].strip()
         relation.save()
 
     if tipo_usuario == User.TipoUsuario.ESTUDIANTE and "matricula" in validated_data:
@@ -119,6 +169,22 @@ def _update_role_user(user, relation, validated_data, tipo_usuario):
         if Estudiante.objects.exclude(pk=relation.pk).filter(matricula=matricula).exists():
             return Response({"message": f"La matricula {matricula} ya existe."}, status=status.HTTP_400_BAD_REQUEST)
         relation.matricula = matricula
+
+    if tipo_usuario == User.TipoUsuario.ESTUDIANTE:
+        if "telefono" in validated_data:
+            relation.telefono = validated_data["telefono"].strip()
+        if "programa" in validated_data:
+            relation.programa = validated_data["programa"].strip()
+        if "semestre" in validated_data:
+            relation.semestre = validated_data["semestre"].strip()
+        if "fecha_inscripcion" in validated_data:
+            relation.fecha_inscripcion = validated_data["fecha_inscripcion"]
+        if "direccion" in validated_data:
+            relation.direccion = validated_data["direccion"].strip()
+        if "contacto_emergencia_nombre" in validated_data:
+            relation.contacto_emergencia_nombre = validated_data["contacto_emergencia_nombre"].strip()
+        if "contacto_emergencia_telefono" in validated_data:
+            relation.contacto_emergencia_telefono = validated_data["contacto_emergencia_telefono"].strip()
         relation.save()
 
     return None
@@ -205,7 +271,7 @@ class EstudiantesView(generics.GenericAPIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get(self, request, *args, **kwargs):
-        estudiantes = Estudiante.objects.select_related("usuario").order_by("usuario__first_name", "usuario__last_name")
+        estudiantes = Estudiante.objects.select_related("usuario").prefetch_related("inscripciones__grupo").order_by("usuario__first_name", "usuario__last_name")
         return Response(EstudianteSerializer(estudiantes, many=True).data)
 
     @transaction.atomic
@@ -227,7 +293,7 @@ class EstudianteDetailView(generics.GenericAPIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_object(self, pk):
-        return Estudiante.objects.select_related("usuario").filter(pk=pk).first()
+        return Estudiante.objects.select_related("usuario").prefetch_related("inscripciones__grupo").filter(pk=pk).first()
 
     @transaction.atomic
     def patch(self, request, pk, *args, **kwargs):
