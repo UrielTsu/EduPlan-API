@@ -5,9 +5,11 @@ from django.conf.urls.static import static
 from .views.auth import CustomAuthToken, Logout
 from .views.bootstrap import VersionView
 from .views.classrooms import AulaDetailView, AulasView
+from .views.change_requests import SolicitudDetailView, SolicitudesView
 from .views.groups import GrupoDetailView, GruposView
 from .views.periods import PeriodoDetailView, PeriodosView
 from .views.subjects import MateriaDetailView, MateriasView
+from .views.tasks import TareaCursoDetailView, TareasCursoView
 from .views.users import (
     DocenteDetailView,
     DocentesView,
@@ -33,6 +35,10 @@ urlpatterns = [
     path("api/grupos/<int:pk>/", GrupoDetailView.as_view(), name="api-grupo-detail"),
     path("api/aulas/", AulasView.as_view(), name="api-aulas"),
     path("api/aulas/<int:pk>/", AulaDetailView.as_view(), name="api-aula-detail"),
+    path("api/solicitudes/", SolicitudesView.as_view(), name="api-solicitudes"),
+    path("api/solicitudes/<int:pk>/", SolicitudDetailView.as_view(), name="api-solicitud-detail"),
+    path("api/tareas/", TareasCursoView.as_view(), name="api-tareas"),
+    path("api/tareas/<int:pk>/", TareaCursoDetailView.as_view(), name="api-tarea-detail"),
     path("api/docentes/", DocentesView.as_view(), name="api-docentes"),
     path("api/docentes/<int:pk>/", DocenteDetailView.as_view(), name="api-docente-detail"),
     path("api/estudiantes/", EstudiantesView.as_view(), name="api-estudiantes"),

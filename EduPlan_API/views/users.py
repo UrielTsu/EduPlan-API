@@ -33,6 +33,13 @@ def _create_role_user(validated_data, tipo_usuario):
     password = validated_data["password"]
     is_active = validated_data.get("is_active", True)
     numero_empleado = validated_data.get("numero_empleado", "").strip()
+    telefono = validated_data.get("telefono", "").strip()
+    departamento = validated_data.get("departamento", "").strip()
+    especializacion = validated_data.get("especializacion", "").strip()
+    tipo_contrato = validated_data.get("tipo_contrato", "").strip()
+    fecha_contratacion = validated_data.get("fecha_contratacion")
+    horario_atencion = validated_data.get("horario_atencion", "").strip()
+    cubiculo = validated_data.get("cubiculo", "").strip()
     matricula = validated_data.get("matricula", "").strip()
     telefono = validated_data.get("telefono", "").strip()
     programa = validated_data.get("programa", "").strip()
@@ -84,7 +91,17 @@ def _create_role_user(validated_data, tipo_usuario):
         return Administrador.objects.get(usuario=user), None
 
     if tipo_usuario == User.TipoUsuario.DOCENTE:
-        return Docente.objects.create(usuario=user, numero_empleado=numero_empleado), None
+        return Docente.objects.create(
+            usuario=user,
+            numero_empleado=numero_empleado,
+            telefono=telefono,
+            departamento=departamento,
+            especializacion=especializacion,
+            tipo_contrato=tipo_contrato,
+            fecha_contratacion=fecha_contratacion,
+            horario_atencion=horario_atencion,
+            cubiculo=cubiculo,
+        ), None
 
     return Estudiante.objects.create(
         usuario=user,
@@ -129,6 +146,22 @@ def _update_role_user(user, relation, validated_data, tipo_usuario):
         if Docente.objects.exclude(pk=relation.pk).filter(numero_empleado=numero_empleado).exists():
             return Response({"message": f"El numero de empleado {numero_empleado} ya existe."}, status=status.HTTP_400_BAD_REQUEST)
         relation.numero_empleado = numero_empleado
+
+    if tipo_usuario == User.TipoUsuario.DOCENTE:
+        if "telefono" in validated_data:
+            relation.telefono = validated_data["telefono"].strip()
+        if "departamento" in validated_data:
+            relation.departamento = validated_data["departamento"].strip()
+        if "especializacion" in validated_data:
+            relation.especializacion = validated_data["especializacion"].strip()
+        if "tipo_contrato" in validated_data:
+            relation.tipo_contrato = validated_data["tipo_contrato"].strip()
+        if "fecha_contratacion" in validated_data:
+            relation.fecha_contratacion = validated_data["fecha_contratacion"]
+        if "horario_atencion" in validated_data:
+            relation.horario_atencion = validated_data["horario_atencion"].strip()
+        if "cubiculo" in validated_data:
+            relation.cubiculo = validated_data["cubiculo"].strip()
         relation.save()
 
     if tipo_usuario == User.TipoUsuario.ESTUDIANTE and "matricula" in validated_data:
@@ -238,7 +271,7 @@ class EstudiantesView(generics.GenericAPIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get(self, request, *args, **kwargs):
-        estudiantes = Estudiante.objects.select_related("usuario").order_by("usuario__first_name", "usuario__last_name")
+        estudiantes = Estudiante.objects.select_related("usuario").prefetch_related("inscripciones__grupo").order_by("usuario__first_name", "usuario__last_name")
         return Response(EstudianteSerializer(estudiantes, many=True).data)
 
     @transaction.atomic
@@ -260,7 +293,7 @@ class EstudianteDetailView(generics.GenericAPIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_object(self, pk):
-        return Estudiante.objects.select_related("usuario").filter(pk=pk).first()
+        return Estudiante.objects.select_related("usuario").prefetch_related("inscripciones__grupo").filter(pk=pk).first()
 
     @transaction.atomic
     def patch(self, request, pk, *args, **kwargs):

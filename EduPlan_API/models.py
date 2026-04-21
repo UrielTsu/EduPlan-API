@@ -91,6 +91,13 @@ class Docente(models.Model):
         primary_key=True,
     )
     numero_empleado = models.CharField(max_length=50, unique=True)
+    telefono = models.CharField(max_length=30, blank=True)
+    departamento = models.CharField(max_length=120, blank=True)
+    especializacion = models.CharField(max_length=160, blank=True)
+    tipo_contrato = models.CharField(max_length=80, blank=True)
+    fecha_contratacion = models.DateField(null=True, blank=True)
+    horario_atencion = models.CharField(max_length=160, blank=True)
+    cubiculo = models.CharField(max_length=80, blank=True)
     creation = models.DateTimeField(auto_now_add=True)
     update = models.DateTimeField(auto_now=True)
 
@@ -118,6 +125,21 @@ class Estudiante(models.Model):
 
     def __str__(self):
         return f"Estudiante: {self.usuario.email}"
+
+
+class Inscripcion(models.Model):
+    estudiante = models.ForeignKey(Estudiante, on_delete=models.CASCADE, related_name="inscripciones")
+    grupo = models.ForeignKey("Grupo", on_delete=models.CASCADE, related_name="inscripciones")
+    fecha_inscripcion = models.DateField(auto_now_add=True)
+    creation = models.DateTimeField(auto_now_add=True)
+    update = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-fecha_inscripcion", "-id"]
+        unique_together = ("estudiante", "grupo")
+
+    def __str__(self):
+        return f"{self.estudiante.usuario.email} -> {self.grupo.codigo}"
 
 
 class Periodo(models.Model):
@@ -158,7 +180,11 @@ class Grupo(models.Model):
     codigo = models.CharField(max_length=20, unique=True)
     materia = models.CharField(max_length=150)
     docente = models.CharField(max_length=150, blank=True)
+    aula = models.ForeignKey("Aula", on_delete=models.SET_NULL, related_name="grupos", null=True, blank=True)
     semestre = models.CharField(max_length=50)
+    dias_semana = models.JSONField(default=list, blank=True)
+    hora_inicio = models.TimeField(null=True, blank=True)
+    hora_fin = models.TimeField(null=True, blank=True)
     cupo_max = models.PositiveIntegerField()
     inscritos = models.PositiveIntegerField(default=0)
     creation = models.DateTimeField(auto_now_add=True)
@@ -170,11 +196,34 @@ class Grupo(models.Model):
     def __str__(self):
         return self.codigo
 
+    def sync_inscritos(self):
+        inscritos = self.inscripciones.count()
+
+        if self.inscritos != inscritos:
+            self.inscritos = inscritos
+            self.save(update_fields=["inscritos", "update"])
+
+
+class TareaCurso(models.Model):
+    grupo = models.ForeignKey(Grupo, on_delete=models.CASCADE, related_name="tareas")
+    titulo = models.CharField(max_length=160)
+    descripcion = models.TextField(blank=True)
+    fecha_entrega = models.DateField()
+    creation = models.DateTimeField(auto_now_add=True)
+    update = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["fecha_entrega", "id"]
+
+    def __str__(self):
+        return f"{self.grupo.codigo} - {self.titulo}"
+
 
 class Aula(models.Model):
     class Estado(models.TextChoices):
         DISPONIBLE = "Disponible", "Disponible"
-        EN_USO = "En uso", "En uso"
+        OCUPADO = "Ocupado", "Ocupado"
+        FUERA_DE_SERVICIO = "Fuera de servicio", "Fuera de servicio"
 
     edificio = models.CharField(max_length=100)
     numero = models.CharField(max_length=50)
@@ -190,6 +239,43 @@ class Aula(models.Model):
 
     def __str__(self):
         return f"{self.edificio} - {self.numero}"
+
+
+class SolicitudDocente(models.Model):
+    class Tipo(models.TextChoices):
+        CAMBIO_AULA = "Cambio de Aula", "Cambio de Aula"
+        REPORTE_FALLA = "Reporte de Falla Tecnica", "Reporte de Falla Tecnica"
+        SOLICITUD_MATERIAL = "Solicitud de Material", "Solicitud de Material"
+        AJUSTE_HORARIO = "Ajuste de Horario", "Ajuste de Horario"
+
+    class Estado(models.TextChoices):
+        PENDIENTE = "Pendiente", "Pendiente"
+        APROBADA = "Aprobada", "Aprobada"
+        RECHAZADA = "Rechazada", "Rechazada"
+
+    docente = models.ForeignKey(Docente, on_delete=models.CASCADE, related_name="solicitudes")
+    admin_resuelve = models.ForeignKey(
+        Administrador,
+        on_delete=models.SET_NULL,
+        related_name="solicitudes_resueltas",
+        null=True,
+        blank=True,
+    )
+    tipo_solicitud = models.CharField(max_length=60, choices=Tipo.choices)
+    aula = models.CharField(max_length=120)
+    motivo = models.CharField(max_length=200)
+    informacion_adicional = models.TextField()
+    estado = models.CharField(max_length=20, choices=Estado.choices, default=Estado.PENDIENTE)
+    fecha_solicitud = models.DateTimeField(auto_now_add=True)
+    fecha_resolucion = models.DateTimeField(null=True, blank=True)
+    creation = models.DateTimeField(auto_now_add=True)
+    update = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-fecha_solicitud", "-id"]
+
+    def __str__(self):
+        return f"{self.tipo_solicitud} - {self.docente.usuario.email}"
 
 class BearerTokenAuthentication(TokenAuthentication):
     keyword = "Bearer"
