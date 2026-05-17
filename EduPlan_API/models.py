@@ -75,8 +75,11 @@ class Administrador(models.Model):
     update = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
+        # Validación: Solo permite crear UN administrador en la BD
+        # Si no tiene ID (es nuevo) y ya existe otro administrador, lanza error
         if not self.pk and Administrador.objects.exists():
             raise ValidationError("Solo puede existir un administrador.")
+        # Ejecuta el save normal de Django
         super().save(*args, **kwargs)
 
     def __str__(self):
