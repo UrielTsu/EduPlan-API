@@ -40,12 +40,19 @@ class CustomAuthToken(ObtainAuthToken):
 class Logout(generics.GenericAPIView):
     permission_classes = (permissions.IsAuthenticated,)
 
+    # Maneja el logout: elimina el token de autenticación del usuario
+    # Solo usuarios autenticados pueden acceder (permission_classes)
+    # Retorna true si se eliminó correctamente, false si hay error
     def get(self, request, *args, **kwargs):
         user = request.user
+        # Verifica que el usuario esté activo antes de hacer logout
         if user.is_active:
+            # Obtiene el token del usuario y lo elimina de la BD
             token = Token.objects.get(user=user)
             token.delete()
 
+            # Retorna confirmación de logout exitoso
             return Response({"logout": True})
 
+        # Si el usuario no está activo, retorna error
         return Response({"logout": False})
