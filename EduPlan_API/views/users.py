@@ -27,6 +27,10 @@ def _format_validation_error(exc):
 
 
 def _create_role_user(validated_data, tipo_usuario):
+    # Crea un usuario con su rol específico (Admin, Docente o Estudiante)
+    # Extrae datos del formulario, valida reglas de negocio y crea el usuario + su perfil relacionado
+    # Retorna: (objeto_rol_creado, error_response) o (None, error_response) si falla
+    
     first_name = validated_data["first_name"]
     last_name = validated_data.get("last_name", "")
     email = validated_data["email"]
@@ -49,15 +53,18 @@ def _create_role_user(validated_data, tipo_usuario):
     contacto_emergencia_nombre = validated_data.get("contacto_emergencia_nombre", "").strip()
     contacto_emergencia_telefono = validated_data.get("contacto_emergencia_telefono", "").strip()
 
+    # Valida que el email no esté registrado
     if User.objects.filter(email=email).exists():
         return None, Response({"message": f"El correo {email} ya existe."}, status=status.HTTP_400_BAD_REQUEST)
 
+    # Valida que no haya más de un administrador en el sistema
     if tipo_usuario == User.TipoUsuario.ADMIN and Administrador.objects.exists():
         return None, Response(
             {"message": "Solo puede existir un administrador en el sistema."},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
+    # Valida campos obligatorios según el rol
     if tipo_usuario == User.TipoUsuario.DOCENTE and not numero_empleado:
         return None, Response(
             {"message": "El numero de empleado es obligatorio para docentes."},
@@ -70,22 +77,28 @@ def _create_role_user(validated_data, tipo_usuario):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
+    # Crea el usuario base con los datos principales
     user = User(
         email=email,
         first_name=first_name,
         last_name=last_name,
         tipo_usuario=tipo_usuario,
         is_active=is_active,
-        is_staff=tipo_usuario == User.TipoUsuario.ADMIN,
+        is_staff=tipo_usuario == User.TipoUsuario.ADMIN,  # Solo Admin tiene acceso al panel
         is_superuser=tipo_usuario == User.TipoUsuario.ADMIN,
     )
+    
+    # Valida que la contraseña cumpla con los requisitos de seguridad
     try:
         validate_password(password, user)
     except DjangoValidationError as exc:
         return None, Response({"password": _format_validation_error(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Encripta la contraseña y guarda el usuario en BD
     user.set_password(password)
     user.save()
 
+    # Crea el perfil específico según el rol del usuario
     if tipo_usuario == User.TipoUsuario.ADMIN:
         Administrador.objects.create(usuario=user)
         return Administrador.objects.get(usuario=user), None
